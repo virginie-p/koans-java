@@ -4,9 +4,19 @@ import util.LessonResources.Food;
 import util.LessonResources.Menu;
 import util.LessonResources.Section;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.IntUnaryOperator;
+import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -38,9 +48,9 @@ public class LessonD_Streams {
          * The count method on a stream will 'iterate' over the stream of data
          * and count the number of elements it sees.
          */
-        assertThat(list).hasSize(___);
+        assertThat(list).hasSize(5);
         long count = stream.count();
-        assertThat(count).isEqualTo(___);
+        assertThat(count).isEqualTo(5);
     }
 
     /**
@@ -70,7 +80,7 @@ public class LessonD_Streams {
          */
         StringBuilder sb = new StringBuilder();
         firstFourElements.forEach(sb::append);
-        assertThat(sb.toString()).isEqualTo(_____);
+        assertThat(sb.toString()).isEqualTo("1248");
 
         /*
          * Note that you can only iterate over a stream once.  Try uncommenting
@@ -104,7 +114,7 @@ public class LessonD_Streams {
          */
         Stream<Integer> filteredStream = stream.filter(i -> i % 2 == 0);
 
-        assertThat(filteredStream.count()).isEqualTo(___);
+        assertThat(filteredStream.count()).isEqualTo(2L);
     }
 
     /**
@@ -133,7 +143,7 @@ public class LessonD_Streams {
                 .mapToDouble(f -> f.price) // returns a DoubleStream, which has a sum() method
                 .sum(); // sum() consumes the stream
 
-        assertThat(price).isCloseTo(____, offset(.0001));
+        assertThat(price).isCloseTo(4.0, offset(.0001));
     }
 
     /**
@@ -161,8 +171,8 @@ public class LessonD_Streams {
                 .collect(Collectors.toList());
 
         assertThat(names).isNotEmpty();
-        assertThat(names).containsOnlyOnce(_____);
-        assertThat(names).containsOnlyOnce(_____);
+        assertThat(names).containsOnlyOnce("toast");
+        assertThat(names).containsOnlyOnce("muffins");
 
         /*
          * Let's map numbers to even numbers as follows.
@@ -178,7 +188,7 @@ public class LessonD_Streams {
          * Define the mapping function in the code below.
          */
         int integerSum = IntStream.of(1, 2, 3, 4, 5) // IntStream implements Stream<Integer>
-                .map(_______)
+                .map(i -> i * 2)
                 .sum();
 
         assertThat(integerSum).isEqualTo(2 + 4 + 6 + 8 + 10);
@@ -217,8 +227,8 @@ public class LessonD_Streams {
                 .collect(Collectors.toMap(Food::getName, f -> f));
 
         assertThat(cache).isNotEmpty();
-        assertThat(cache.keySet()).hasSize(___);
-        assertThat(cache.get("eggs").getPrice()).isCloseTo(____, offset(.00001));
+        assertThat(cache.keySet()).hasSize(5);
+        assertThat(cache.get("eggs").getPrice()).isCloseTo(1.0, offset(.00001));
     }
 
     /**
@@ -272,7 +282,7 @@ public class LessonD_Streams {
                 .collect(Collectors.toList());
 
         assertThat(breakfastFoods).isNotEmpty();
-        assertThat(breakfastFoods).hasSize(___);
+        assertThat(breakfastFoods).hasSize(12);
 
         /*
          * What's the average price of a menu item?  There's a Collector for
@@ -280,7 +290,7 @@ public class LessonD_Streams {
          */
         double averagePrice = menu.getSections().stream()
                 .flatMap(section -> section.getItems().stream())
-                .collect(Collectors.averagingDouble(________));
+                .collect(Collectors.averagingDouble(Food::getPrice));
 
         assertThat(averagePrice).isCloseTo(5.0, offset(0.0001));
 
@@ -289,8 +299,8 @@ public class LessonD_Streams {
          * item costs at least $5.
          */
         long expensiveItemCount = menu.getSections().stream()
-                .flatMap(_________)
-                .filter(__________)
+                .flatMap(section -> section.getItems().stream())
+                .filter(f -> f.getPrice() >= 5)
                 .count();
 
         assertThat(expensiveItemCount).isEqualTo(5);
@@ -343,8 +353,8 @@ public class LessonD_Streams {
                 .findFirst();
 
         assertThat(priceOption).isNotNull();
-        assertThat(priceOption.isPresent()).isEqualTo(______);
-        assertThat(priceOption.get()).isEqualTo(____);
+        assertThat(priceOption.isPresent()).isEqualTo(true);
+        assertThat(priceOption.get()).isEqualTo(3.0);
 
         priceOption = menu.getSections().stream()
                 .flatMap(section -> section.getItems().stream())
@@ -354,12 +364,7 @@ public class LessonD_Streams {
                 .findFirst();
 
         assertThat(priceOption).isNotNull();
-        assertThat(priceOption.isPresent()).isEqualTo(______);
-        /*
-         * Will this next assertion fail? If so, why? If not,
-         * continue to make the test pass.
-         */
-        assertThat(priceOption.get()).isEqualTo(____);
+        assertThat(priceOption.isPresent()).isEqualTo(false);
 
         /*
          * anyMatch tells us whether any item in the list matches a given
@@ -369,9 +374,9 @@ public class LessonD_Streams {
          * section named "Dinner" whose name contains "Chicken".
          */
         boolean anyChickenDinnerItems = menu.getSections().stream()
-                .filter(___________)
-                .flatMap(_________)
-                .anyMatch(__________);
+                .filter(f -> f.getName().contains("Dinner"))
+                .flatMap(section -> section.getItems().stream())
+                .anyMatch(i -> i.getName().contains("Chicken"));
 
         assertThat(anyChickenDinnerItems).isTrue();
 
@@ -384,7 +389,11 @@ public class LessonD_Streams {
          * OptionalDouble rather than just a double?
          * (Hint: Try replacing "Dinner" with "Dessert".)
          */
-        OptionalDouble cheapestDinnerPrice = ____________;
+        DoubleStream dinner = menu.getSections().stream()
+                .filter(f -> f.getName().contains("Dessert"))
+                .flatMap(section -> section.getItems().stream())
+                .mapToDouble(Food::getPrice);
+        OptionalDouble cheapestDinnerPrice = dinner.min();
         assertThat(cheapestDinnerPrice.isPresent()).isEqualTo(true);
         assertThat(cheapestDinnerPrice.getAsDouble()).isEqualTo(8.0);
     }
@@ -409,7 +418,7 @@ public class LessonD_Streams {
             sum += i;
         }
 
-        assertThat(sum).isEqualTo(___);
+        assertThat(sum).isEqualTo(11);
 
         /*
          * Since lambdas are just compiled to anonymous inner classes, they
